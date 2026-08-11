@@ -401,18 +401,27 @@
         <div class="app-card">
             <!-- Step 1: Currency Select & Amount Input (Stacked Vertically) -->
             <div class="form-group">
-                <label class="form-label" style="margin-bottom: 0.3rem;">1. 選擇消費外幣</label>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                    <label class="form-label" style="margin-bottom: 0;">1. 選擇消費外幣</label>
+                    <span id="calc-exchange-rate-display" style="font-size: 0.76rem; color: var(--heading-color); font-weight: 700;">1 JPY ≈ 0.2120 TWD</span>
+                </div>
                 <select class="form-select" id="calc-currency-select" onchange="calculateExpenses()" style="margin-bottom: 0.75rem;">
                     <option value="JPY" selected>🇯🇵 日圓 JPY</option>
                     <option value="KRW">🇰🇷 韓元 KRW</option>
+                    <option value="USD">🇺🇸 美元 USD</option>
+                    <option value="EUR">🇪🇺 歐元 EUR</option>
+                    <option value="HKD">🇭🇰 港幣 HKD</option>
+                    <option value="CNY">🇨🇳 人民幣 CNY</option>
                     <option value="THB">🇹🇭 泰銖 THB</option>
                     <option value="VND">🇻🇳 越南盾 VND</option>
-                    <option value="CNY">🇨🇳 人民幣 CNY</option>
                     <option value="SGD">🇸🇬 新加坡幣 SGD</option>
                     <option value="MYR">🇲🇾 馬來西亞令吉 MYR</option>
-                    <option value="EUR">🇪🇺 歐元 EUR</option>
-                    <option value="USD">🇺🇸 美元 USD</option>
+                    <option value="AUD">🇦🇺 澳幣 AUD</option>
+                    <option value="CAD">🇨🇦 加幣 CAD</option>
                     <option value="GBP">🇬🇧 英鎊 GBP</option>
+                    <option value="CHF">🇨🇭 瑞士法郎 CHF</option>
+                    <option value="NZD">🇳🇿 紐元 NZD</option>
+                    <option value="PHP">🇵🇭 菲律賓披索 PHP</option>
                 </select>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
@@ -475,16 +484,16 @@
             <!-- Step 4: Result Display Panel -->
             <div class="result-panel">
                 <div class="result-row">
-                    <span>當前即時參考匯率：</span>
-                    <strong id="calc-exchange-rate-display" style="color: var(--heading-color);">1 JPY ≈ 0.2120 TWD</strong>
+                    <span>折合新台幣金額：</span>
+                    <span id="calc-base-twd">NT$ 2,120</span>
                 </div>
                 <div class="result-row" id="calc-tax-refund-row" style="display: none; color: var(--accent-cyan);">
                     <span>🛍️ 預估退稅扣除金額：</span>
-                    <span id="calc-tax-refund-val">- 909 JPY</span>
+                    <span id="calc-tax-refund-val">- 909 JPY (折合 NT$ 193)</span>
                 </div>
-                <div class="result-row">
-                    <span>折合新台幣金額：</span>
-                    <span id="calc-base-twd">NT$ 2,120</span>
+                <div class="result-row" id="calc-net-after-tax-row" style="display: none; font-weight: 700; color: var(--heading-color);">
+                    <span>退稅後新台幣金額：</span>
+                    <span id="calc-net-after-tax-twd">NT$ 1,927</span>
                 </div>
                 <div class="result-row" id="calc-fee-row" style="display: none;">
                     <span>➕ 海外交易手續費 (1.5%)：</span>
@@ -630,9 +639,10 @@
         };
 
         let exchangeRatesTWD = {
-            'JPY': 0.2120, 'KRW': 0.0245, 'THB': 0.92, 'VND': 0.0013,
-            'CNY': 4.52, 'SGD': 24.50, 'MYR': 7.35, 'EUR': 35.15,
-            'USD': 32.50, 'GBP': 41.20
+            'JPY': 0.2120, 'KRW': 0.0245, 'USD': 32.50, 'EUR': 35.15,
+            'HKD': 4.15, 'CNY': 4.52, 'THB': 0.92, 'VND': 0.0013,
+            'SGD': 24.50, 'MYR': 7.35, 'AUD': 21.20, 'CAD': 23.80,
+            'GBP': 41.20, 'CHF': 36.50, 'NZD': 19.50, 'PHP': 0.56
         };
 
         let selectedCardKey = 'none';
@@ -733,16 +743,10 @@
                 .then(data => {
                     if (data && data.rates) {
                         const rates = data.rates;
-                        if (rates.JPY) exchangeRatesTWD['JPY'] = 1 / rates.JPY;
-                        if (rates.KRW) exchangeRatesTWD['KRW'] = 1 / rates.KRW;
-                        if (rates.THB) exchangeRatesTWD['THB'] = 1 / rates.THB;
-                        if (rates.VND) exchangeRatesTWD['VND'] = 1 / rates.VND;
-                        if (rates.CNY) exchangeRatesTWD['CNY'] = 1 / rates.CNY;
-                        if (rates.SGD) exchangeRatesTWD['SGD'] = 1 / rates.SGD;
-                        if (rates.MYR) exchangeRatesTWD['MYR'] = 1 / rates.MYR;
-                        if (rates.EUR) exchangeRatesTWD['EUR'] = 1 / rates.EUR;
-                        if (rates.USD) exchangeRatesTWD['USD'] = 1 / rates.USD;
-                        if (rates.GBP) exchangeRatesTWD['GBP'] = 1 / rates.GBP;
+                        const currList = ['JPY', 'KRW', 'USD', 'EUR', 'HKD', 'CNY', 'THB', 'VND', 'SGD', 'MYR', 'AUD', 'CAD', 'GBP', 'CHF', 'NZD', 'PHP'];
+                        currList.forEach(c => {
+                            if (rates[c]) exchangeRatesTWD[c] = 1 / rates[c];
+                        });
 
                         localStorage.setItem('hank_cached_rates', JSON.stringify(exchangeRatesTWD));
                         localStorage.setItem('hank_rates_timestamp', now.toString());
@@ -782,7 +786,10 @@
 
             const rate = exchangeRatesTWD[curr] || 1.0;
 
-            // 1. Tax Refund
+            // 1. Gross TWD (Original Amount Before Tax Refund)
+            const grossTWD = originalAmt * rate;
+
+            // 2. Tax Refund Logic
             let taxMode = taxSelect ? taxSelect.value : 'none';
             if (taxMode === 'auto') {
                 if (curr === 'JPY') taxMode = 'JPY';
@@ -799,6 +806,8 @@
             let netForeignAmt = originalAmt;
             const taxRefundRow = document.getElementById('calc-tax-refund-row');
             const taxRefundVal = document.getElementById('calc-tax-refund-val');
+            const netAfterTaxRow = document.getElementById('calc-net-after-tax-row');
+            const netAfterTaxVal = document.getElementById('calc-net-after-tax-twd');
 
             if (taxMode !== 'none' && originalAmt > 0) {
                 let refundRate = TAX_REFUND_RATES[taxMode] || 0;
@@ -814,17 +823,25 @@
                 if (minMet && refundRate > 0) {
                     taxRefundAmt = originalAmt * refundRate;
                     netForeignAmt = originalAmt - taxRefundAmt;
+                    const taxRefundTWD = taxRefundAmt * rate;
+                    const netTWD = netForeignAmt * rate;
+
                     if (taxRefundRow) taxRefundRow.style.display = 'flex';
-                    if (taxRefundVal) taxRefundVal.innerText = `- ${Math.round(taxRefundAmt).toLocaleString()} ${curr}`;
+                    if (taxRefundVal) taxRefundVal.innerText = `- ${Math.round(taxRefundAmt).toLocaleString()} ${curr} (折合 NT$ ${Math.round(taxRefundTWD).toLocaleString()})`;
+
+                    if (netAfterTaxRow) netAfterTaxRow.style.display = 'flex';
+                    if (netAfterTaxVal) netAfterTaxVal.innerText = `NT$ ${Math.round(netTWD).toLocaleString()}`;
                 } else {
                     if (taxRefundRow) taxRefundRow.style.display = 'none';
+                    if (netAfterTaxRow) netAfterTaxRow.style.display = 'none';
                 }
             } else {
                 if (taxRefundRow) taxRefundRow.style.display = 'none';
+                if (netAfterTaxRow) netAfterTaxRow.style.display = 'none';
             }
 
-            // 2. Base TWD
-            const baseTWD = netForeignAmt * rate;
+            // Net TWD after tax refund
+            const netBaseTWD = netForeignAmt * rate;
 
             // 3. Card logic
             const cardInfo = CARD_CONFIGS[selectedCardKey] || CARD_CONFIGS['none'];
@@ -836,7 +853,7 @@
             let feeTWD = 0;
             let cashRebateTWD = 0;
             let pointsEarned = 0;
-            let finalPayableTWD = baseTWD;
+            let finalPayableTWD = netBaseTWD;
 
             if (selectedCardKey === 'none') {
                 if (feeRow) feeRow.style.display = 'none';
@@ -847,7 +864,7 @@
                     savingsNote.innerText = '純匯率試算模式 (可選擇信用卡開啟刷卡試算)';
                 }
             } else {
-                feeTWD = baseTWD * 0.015;
+                feeTWD = netBaseTWD * 0.015;
                 if (feeRow) {
                     feeRow.style.display = 'flex';
                     const feeVal = document.getElementById('calc-fee-twd');
@@ -861,8 +878,8 @@
                 }
 
                 if (cardInfo.rewardType === 'cash') {
-                    cashRebateTWD = baseTWD * (cashbackPct / 100);
-                    finalPayableTWD = baseTWD + feeTWD - cashRebateTWD;
+                    cashRebateTWD = netBaseTWD * (cashbackPct / 100);
+                    finalPayableTWD = netBaseTWD + feeTWD - cashRebateTWD;
 
                     if (rebateRow) {
                         rebateRow.style.display = 'flex';
@@ -882,8 +899,8 @@
                         }
                     }
                 } else if (cardInfo.rewardType === 'points') {
-                    pointsEarned = Math.round(baseTWD * (cashbackPct / 100));
-                    finalPayableTWD = baseTWD + feeTWD;
+                    pointsEarned = Math.round(netBaseTWD * (cashbackPct / 100));
+                    finalPayableTWD = netBaseTWD + feeTWD;
 
                     if (rebateRow) rebateRow.style.display = 'none';
                     if (pointsRow) {
@@ -904,7 +921,7 @@
             if (rateDisplay) rateDisplay.innerText = `1 ${curr} ≈ ${rate < 1 ? rate.toFixed(4) : rate.toFixed(2)} TWD`;
 
             const baseDisplay = document.getElementById('calc-base-twd');
-            if (baseDisplay) baseDisplay.innerText = `NT$ ${Math.round(baseTWD).toLocaleString()}`;
+            if (baseDisplay) baseDisplay.innerText = `NT$ ${Math.round(grossTWD).toLocaleString()}`;
 
             const netDisplay = document.getElementById('calc-net-twd');
             if (netDisplay) netDisplay.innerText = `NT$ ${Math.round(finalPayableTWD).toLocaleString()}`;
