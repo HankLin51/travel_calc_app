@@ -1,4 +1,4 @@
-const CACHE_NAME = 'travel-calc-app-v1';
+const CACHE_NAME = 'travel-calc-app-v54';
 const ASSETS = [
   'index.html',
   'manifest.json',
@@ -30,12 +30,23 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+// Network-first strategy: Always fetch latest version from GitHub when online, fallback to cache when offline
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request).catch(() => {
-        return caches.match('index.html');
-      });
-    })
+    fetch(event.request)
+      .then(response => {
+        const resClone = response.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, resClone);
+        });
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      })
   );
 });
