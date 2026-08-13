@@ -412,6 +412,7 @@
                     <option value="EUR">🇪🇺 歐元 EUR</option>
                     <option value="HKD">🇭🇰 港幣 HKD</option>
                     <option value="CNY">🇨🇳 人民幣 CNY</option>
+                    <option value="INR">🇮🇳 印度盧比 INR</option>
                     <option value="PLN">🇵🇱 波蘭茲羅提 PLN</option>
                     <option value="THB">🇹🇭 泰銖 THB</option>
                     <option value="VND">🇻🇳 越南盾 VND</option>
@@ -644,7 +645,7 @@
             'JPY': 0.2120, 'KRW': 0.0245, 'USD': 32.50, 'EUR': 35.15,
             'HKD': 4.15, 'CNY': 4.52, 'PLN': 8.20, 'THB': 0.92, 'VND': 0.0013,
             'SGD': 24.50, 'MYR': 7.35, 'AUD': 21.20, 'CAD': 23.80,
-            'GBP': 41.20, 'CHF': 36.50, 'NZD': 19.50, 'PHP': 0.56
+            'GBP': 41.20, 'CHF': 36.50, 'NZD': 19.50, 'PHP': 0.56, 'INR': 0.385
         };
 
         let selectedCardKey = 'none';
@@ -745,7 +746,7 @@
                 .then(data => {
                     if (data && data.rates) {
                         const rates = data.rates;
-                        const currList = ['JPY', 'KRW', 'USD', 'EUR', 'HKD', 'CNY', 'PLN', 'THB', 'VND', 'SGD', 'MYR', 'AUD', 'CAD', 'GBP', 'CHF', 'NZD', 'PHP'];
+                        const currList = ['JPY', 'KRW', 'USD', 'EUR', 'HKD', 'CNY', 'PLN', 'THB', 'VND', 'SGD', 'MYR', 'AUD', 'CAD', 'GBP', 'CHF', 'NZD', 'PHP', 'INR'];
                         currList.forEach(c => {
                             if (rates[c]) exchangeRatesTWD[c] = 1 / rates[c];
                         });
@@ -771,6 +772,7 @@
             if (!currSelect || !amountInput) return;
 
             const curr = currSelect.value;
+            localStorage.setItem('hank_last_currency', curr);
             const rawVal = amountInput.value.trim();
             const originalAmt = parseMathExpression(rawVal);
 
@@ -972,6 +974,12 @@
         }
 
         window.onload = function() {
+            const savedCurr = localStorage.getItem('hank_last_currency');
+            const currSelect = document.getElementById('calc-currency-select');
+            if (savedCurr && currSelect) {
+                currSelect.value = savedCurr;
+            }
+
             fetchLiveRates(false);
 
             if ('serviceWorker' in navigator) {
